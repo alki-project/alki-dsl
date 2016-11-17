@@ -18,4 +18,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'alki-support', '~> 0.3'
+  spec.add_development_dependency 'minitest'
 end
