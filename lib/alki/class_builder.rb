@@ -98,6 +98,10 @@ module Alki
           klass.send :private, name if method[:private]
         end
       end
+
+      klass.send :attr_reader, data[:attr_readers] if data[:attr_readers]
+      klass.send :attr_writer, data[:attr_writers] if data[:attr_writers]
+      klass.send :attr_accessor, data[:attr_accessors] if data[:attr_accessors]
     end
 
     def self.add_initialize(klass,params)
