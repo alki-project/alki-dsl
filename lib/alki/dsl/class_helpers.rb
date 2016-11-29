@@ -4,7 +4,7 @@ module Alki
       def class_builder(subclass = nil)
         unless @ctx[:class_builder]
           @ctx[:class_builder] = {}
-          %i(name prefix).each do |attr|
+          %i(module name prefix).each do |attr|
             @ctx[:class_builder][attr] = @ctx[attr] if @ctx[attr]
           end
         end
@@ -47,19 +47,39 @@ module Alki
         }
       end
 
-      def add_initialize_param(name,subclass: nil)
-        class_builder(subclass)[:initialize_params] ||= []
-        class_builder(subclass)[:initialize_params] << name.to_sym
+      def add_helper(name,&blk)
+        class_builder('Helpers')[:type] = :module
+        add_method name, &blk
+        add_method name, subclass: 'Helpers', &blk
+      end
+
+      def add_helper_module(mod)
+        class_builder('Helpers')[:type] = :module
+        add_module mod
+        add_module mod, subclass: 'Helpers'
+      end
+
+      def add_initialize_param(name,default=nil,subclass: nil)
+        (class_builder(subclass)[:initialize_params]||=[]) << [name.to_sym,default]
       end
 
       def add_instance_class_proxy(type, name,subclass: nil)
-        class_builder(subclass)[:instance_class] ||= {}
-        class_builder(subclass)[:instance_class][name.to_sym] = {type: type}
+        (class_builder(subclass)[:instance_class]||={})[name.to_sym] = {type: type}
       end
 
       def add_module(mod,subclass: nil)
-        class_builder(subclass)[:modules] ||= []
-        class_builder(subclass)[:modules] << mod
+        (class_builder(subclass)[:modules]||=[]) << mod
+      end
+
+      def add_accessor(name,type: :accessor,subclass: nil)
+        (class_builder(subclass)["attr_#{type}s".to_sym]||=[]) << name
+      end
+
+      def add_delegator(name,accessor,method=name,subclass: nil)
+        (class_builder(subclass)[:delegators]||={})[name] = {
+          accessor: accessor,
+          method: method
+        }
       end
     end
   end

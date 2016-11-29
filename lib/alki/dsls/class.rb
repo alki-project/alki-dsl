@@ -4,7 +4,7 @@ require 'alki/class_builder'
 
 module Alki
   module Dsls
-    class ClassDsl < Alki::Dsl::Base
+    class Class < Alki::Dsl::Base
       include Alki::Dsl::ClassHelpers
 
       self::Helpers = Alki::Dsl::ClassHelpers

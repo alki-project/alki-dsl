@@ -6,10 +6,11 @@ module Alki
   module Dsls
     class Dsl < Alki::Dsl::Base
       include Alki::Dsl::ClassHelpers
+      Helpers = Alki::Dsl::ClassHelpers
 
       def self.dsl_info
         {
-          requires: ['alki/dsls/class_dsl'],
+          requires: ['alki/dsls/class'],
           methods: [
             :dsl_method,
             [:init,:dsl_init],
@@ -33,7 +34,7 @@ module Alki
       end
 
       def dsl_method(name, &blk)
-        method_name = "dsl_#{name}".to_sym
+        method_name = name.to_sym
         add_method method_name, private: true, &blk
         @info[:methods] << [name.to_sym,method_name]
       end
@@ -53,17 +54,16 @@ module Alki
         @info[:requires] << dsl_class
         if defined? dsl_class::Helpers
           add_module dsl_class::Helpers
+          add_helper_module dsl_class::Helpers
         end
       end
 
       def helper(name,&blk)
-        add_method name, &blk
-        @helpers[name] = {body: blk}
+        add_helper name, &blk
       end
 
       def helper_module(mod)
-        add_module mod
-        @helper_modules << Alki::Support.load_class(mod)
+        add_helper_module mod
       end
 
       def finish
@@ -71,15 +71,6 @@ module Alki
         info = @info.freeze
         add_class_method :dsl_info do
           info
-        end
-        unless @helpers.empty? && @helper_modules.empty?
-          class_builder[:secondary_classes] ||= []
-          class_builder[:secondary_classes] << {
-            subclass_name: 'Helpers',
-            type: :module,
-            instance_methods: @helpers,
-            modules: @helper_modules,
-          }
         end
       end
     end

@@ -12,13 +12,13 @@ module Alki
       end
 
       def evaluate(dsl,data={},&blk)
-        data[:module] ||= Module.new
+        mod = (data[:module] ||= Module.new)
         process_dsl dsl, data
 
         @inits.each(&:call)
-        dsl_exec data[:module], &blk
+        dsl_exec mod, &blk
         @finishers.reverse_each(&:call)
-        clear_dsl_methods data[:module]
+        clear_dsl_methods mod
 
         @processors.each do |processor|
           processor.build data

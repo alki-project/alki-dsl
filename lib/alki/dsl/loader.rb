@@ -6,7 +6,6 @@ module Alki
     class Loader
       def self.load(config_file, builder = nil, **data)
         builder = Alki::Support.load_class builder if builder
-        Thread.current[:alki_dsl_loader] = nil if Thread.current[:alki_dsl_loader]
         Fiber.new do
           Thread.current[:alki_dsl_loader] = {
             builder: builder,

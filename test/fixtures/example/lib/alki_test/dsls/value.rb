@@ -1,5 +1,5 @@
 Alki do
-  require_dsl 'alki/dsls/class_dsl'
+  require_dsl 'alki/dsls/class'
 
   helper :value= do |v|
     ctx[:value] = v

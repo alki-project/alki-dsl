@@ -1,10 +1,11 @@
+require 'forwardable'
 require 'alki/support'
 
 module Alki
   class ClassBuilder
-    def self.create_constant(name,value = Class.new)
+    def self.create_constant(name,value = Class.new, parent=nil)
+      parent ||= Object
       *ans, ln = name.to_s.split('::')
-      parent = Object
       ans.each do |a|
         unless parent.const_defined? a
           parent.const_set a, Module.new
@@ -34,17 +35,13 @@ module Alki
         )
       end
       if class_name
-        create_constant class_name, klass
+        create_constant class_name, klass, data[:parent_class]
       end
       if data[:secondary_classes]
         data[:secondary_classes].each do |data|
-          if data[:subclass_name]
-            unless klass.name
-              raise ArgumentError.new("subclass_name can only be used if main class has name")
-            end
-            data[:class_name] = "#{klass.name}::#{data[:subclass_name]}"
-          end
-          unless data[:class_name] || data[:name]
+          if data[:subclass]
+            data = data.merge(parent_class: klass,class_name: data[:subclass])
+          else !data[:class_name] && !data[:name]
             raise ArgumentError.new("Secondary classes must have names")
           end
           build data
@@ -99,19 +96,35 @@ module Alki
         end
       end
 
-      klass.send :attr_reader, data[:attr_readers] if data[:attr_readers]
-      klass.send :attr_writer, data[:attr_writers] if data[:attr_writers]
-      klass.send :attr_accessor, data[:attr_accessors] if data[:attr_accessors]
+      if data[:delegators]
+        klass.extend Forwardable
+        data[:delegators].each do |name,delegator|
+          klass.def_delegator delegator[:accessor], delegator[:method], name
+        end
+      end
+
+      klass.send :attr_reader, *data[:attr_readers] if data[:attr_readers]
+      klass.send :attr_writer, *data[:attr_writers] if data[:attr_writers]
+      klass.send :attr_accessor, *data[:attr_accessors] if data[:attr_accessors]
     end
 
     def self.add_initialize(klass,params)
       at_setters = ''
-      params.each do |p|
-        at_setters << "@#{p} = #{p}\n"
+      params.each do |(p,default)|
+        if default
+          default_method = "_default_#{p}".to_sym
+          klass.send :define_method, default_method do
+            default
+          end
+          klass.send :private, default_method
+          at_setters << "@#{p} = #{p} || #{default_method}\n"
+        else
+          at_setters << "@#{p} = #{p}\n"
+        end
       end
 
       klass.class_eval "
-        def initialize(#{params.join(', ')})
+        def initialize(#{params.map{|p| p[1] ? "#{p[0]}=nil" : p[0]}.join(', ')})
         #{at_setters}end"
     end
   end
