@@ -3,6 +3,15 @@ require 'alki/dsl/registry'
 
 module Alki
   module Dsl
+    @loaded = {}
+    def self.[]=(path,value)
+      @loaded[path] =value
+    end
+
+    def self.[](path)
+      @loaded[path]
+    end
+
     def self.register(*args)
       Alki::Dsl::Registry.register *args
     end
@@ -11,8 +20,14 @@ module Alki
       Alki::Dsl::Registry.register_dir *args
     end
 
-    def self.load(*args)
-      Alki::Dsl::Loader.load(*args)
+    def self.load(path)
+      path = File.absolute_path(path)
+      require path
+      self[path]
+    end
+
+    def self.build(name,data={},&blk)
+      Alki::Support.load_class(name).build data, &blk
     end
   end
 end
@@ -20,18 +35,13 @@ end
 module Kernel
   def Alki(builder=nil,&blk)
     if blk
-      loader_config = Thread.current[:alki_dsl_loader]
+      path = caller_locations(1,1)[0].absolute_path
       result = if builder
         builder.build({}, &blk)
-      elsif loader_config && loader_config[:builder]
-        loader_config[:builder].build loader_config[:data], &blk
       else
-        path = caller_locations(1,1)[0].absolute_path
         Alki::Dsl::Registry.build path, &blk
       end
-      if loader_config
-        Thread.current[:alki_dsl_loader][:result] = result
-      end
+      Alki::Dsl[path] = result
     end
     ::Alki
   end

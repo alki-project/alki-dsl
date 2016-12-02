@@ -17,6 +17,13 @@ module Alki
     end
 
     def self.build(data)
+      class_name = data[:class_name]
+      if !class_name && data[:name] && data[:prefix]
+        class_name = Alki::Support.classify(
+          data[:prefix].empty? ? data[:name] : "#{data[:prefix]}/#{data[:name]}"
+        )
+      end
+
       if data[:type] == :module
         klass = Module.new
       else
@@ -28,12 +35,6 @@ module Alki
         klass = Class.new super_class
       end
       build_class data, klass
-      class_name = data[:class_name]
-      if !class_name && data[:name]
-        class_name = Alki::Support.classify(
-          data[:prefix] ? "#{data[:prefix]}/#{data[:name]}" : data[:name]
-        )
-      end
       if class_name
         create_constant class_name, klass, data[:parent_class]
       end
@@ -41,7 +42,7 @@ module Alki
         data[:secondary_classes].each do |data|
           if data[:subclass]
             data = data.merge(parent_class: klass,class_name: data[:subclass])
-          else !data[:class_name] && !data[:name]
+          elsif !data[:class_name] && !data[:name]
             raise ArgumentError.new("Secondary classes must have names")
           end
           build data

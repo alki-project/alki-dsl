@@ -22,7 +22,7 @@ module Alki
 
         @registered_dirs.each do |dir,(builder,data)|
           if path.start_with? dir
-            data = data.merge(name: Alki::Support.path_name(path, dir))
+            data = {name: Alki::Support.path_name(path, dir)}.merge data
             return Entry.new(builder,data)
           end
         end
@@ -47,7 +47,7 @@ module Alki
         if entry
           entry.build blk
         else
-          blk
+          nil
         end
       end
 

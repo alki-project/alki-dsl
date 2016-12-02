@@ -4,19 +4,6 @@ require 'alki/dsl'
 module Alki
   module Dsl
     class Loader
-      def self.load(config_file, builder = nil, **data)
-        builder = Alki::Support.load_class builder if builder
-        Fiber.new do
-          Thread.current[:alki_dsl_loader] = {
-            builder: builder,
-            data: data,
-            result: true,
-          }
-          Kernel.load config_file
-          Thread.current[:alki_dsl_loader][:result]
-        end.resume
-      end
-
       def initialize(root_dir)
         @root_dir = root_dir
       end
@@ -29,12 +16,12 @@ module Alki
 
       def load_all
         all_paths.inject({}) do |h,path|
-          h.merge!(path => Loader.load(path))
+          h.merge!(path => Alki::Dsl.load(path))
         end
       end
 
       def load(file)
-        Loader.load File.expand_path("#{file}.rb",@root_dir)
+        Alki::Dsl.load File.expand_path("#{file}.rb",@root_dir)
       end
     end
   end

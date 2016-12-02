@@ -119,7 +119,7 @@ describe Alki::ClassBuilder do
       if defined?(AlkiTest::TestClass)
         Object.send :remove_const, :AlkiTest
       end
-      build(name: "alki_test/test_class")
+      build(prefix: '', name: "alki_test/test_class")
       assert(defined?(AlkiTest::TestClass),'Expected AlkiTest::TestClass to be defined')
       Object.send :remove_const, :AlkiTest
     end
