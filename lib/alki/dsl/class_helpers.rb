@@ -59,8 +59,8 @@ module Alki
         add_module mod, subclass: 'Helpers'
       end
 
-      def add_initialize_param(name,default=nil,subclass: nil)
-        (class_builder(subclass)[:initialize_params]||=[]) << [name.to_sym,default]
+      def add_initialize_param(name,default=nil,opts={})
+        (class_builder(opts[:subclass])[:initialize_params]||=[]) << [name.to_sym,default]
       end
 
       def add_instance_class_proxy(type, name,subclass: nil)
