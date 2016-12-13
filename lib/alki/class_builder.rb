@@ -111,7 +111,8 @@ module Alki
 
     def self.add_initialize(klass,params)
       at_setters = ''
-      params.each do |(p,default)|
+      params.each do |p|
+        p,default = p.is_a?(Array) ? p : [p,nil]
         if default
           default_method = "_default_#{p}".to_sym
           klass.send :define_method, default_method do
@@ -125,7 +126,7 @@ module Alki
       end
 
       klass.class_eval "
-        def initialize(#{params.map{|p| p[1] ? "#{p[0]}=nil" : p[0]}.join(', ')})
+        def initialize(#{params.map{|p| p.is_a?(Array) ? "#{p[0]}=nil" : p.to_s}.join(', ')})
         #{at_setters}end"
     end
   end

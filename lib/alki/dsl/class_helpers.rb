@@ -60,7 +60,9 @@ module Alki
       end
 
       def add_initialize_param(name,default=nil,opts={})
-        (class_builder(opts[:subclass])[:initialize_params]||=[]) << [name.to_sym,default]
+        name = name.to_sym
+        param = default ? [name,default] : name
+        (class_builder(opts[:subclass])[:initialize_params]||=[]) << param
       end
 
       def add_instance_class_proxy(type, name,subclass: nil)
