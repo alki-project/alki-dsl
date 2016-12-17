@@ -24,18 +24,36 @@ module Alki
         )
       end
 
+      klass = Alki::Support.constantize class_name, data[:parent_class] if class_name
+      must_create = !klass
+
       if data[:type] == :module
-        klass = Module.new
+        if klass
+          if klass.class != Module
+            raise "#{class_name} already exists as is a #{klass.class}"
+          end
+        else
+          klass = Module.new
+        end
       else
+        if klass && klass.class != Class
+          raise "#{class_name} already exists as is a #{klass.class}"
+        end
         super_class = if data[:super_class]
           Alki::Support.load_class data[:super_class]
         else
           Object
         end
-        klass = Class.new super_class
+        if klass
+          if klass.superclass != super_class
+            raise "#{class_name} already exists with different super class"
+          end
+        else
+          klass = Class.new super_class
+        end
       end
       build_class data, klass
-      if class_name
+      if class_name && must_create
         create_constant class_name, klass, data[:parent_class]
       end
       if data[:secondary_classes]
@@ -115,9 +133,7 @@ module Alki
         p,default = p.is_a?(Array) ? p : [p,nil]
         if default
           default_method = "_default_#{p}".to_sym
-          klass.send :define_method, default_method do
-            default
-          end
+          klass.send(:define_method, default_method, &default)
           klass.send :private, default_method
           at_setters << "@#{p} = #{p} || #{default_method}\n"
         else

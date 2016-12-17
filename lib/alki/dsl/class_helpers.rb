@@ -59,7 +59,7 @@ module Alki
         add_module mod, subclass: 'Helpers'
       end
 
-      def add_initialize_param(name,default=nil,opts={})
+      def add_initialize_param(name,opts={},&default)
         name = name.to_sym
         param = default ? [name,default] : name
         (class_builder(opts[:subclass])[:initialize_params]||=[]) << param
