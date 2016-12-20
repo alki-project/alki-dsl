@@ -7,6 +7,14 @@ module Alki
       @registered_paths = {}
       @registered_dirs = {}
 
+      def self.registered_paths
+        @registered_paths.keys
+      end
+
+      def self.registered_dirs
+        @registered_dirs.keys
+      end
+
       def self.register(path,builder,**data)
         @registered_paths[File.absolute_path(path)] = Entry.new(builder,data)
       end
@@ -52,6 +60,8 @@ module Alki
       end
 
       class Entry
+        attr_reader :data
+
         def initialize(builder,data)
           @builder = builder
           @data = data
