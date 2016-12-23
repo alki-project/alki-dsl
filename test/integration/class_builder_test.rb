@@ -105,11 +105,11 @@ describe Alki::ClassBuilder do
       obj.instance_variable_get(:@b).must_equal 2
     end
 
-    it 'should allow providing a class name' do
+    it 'should allow providing a constant name' do
       if defined?(AlkiTestClass)
         Object.send :remove_const, :AlkiTestClass
       end
-      build(class_name: "AlkiTestClass")
+      build(constant_name: "AlkiTestClass")
       assert(defined?(AlkiTestClass),'Expected AlkiTestClass to be defined')
       Object.send :remove_const, :AlkiTestClass
       assert(!defined?(AlkiTestClass))
@@ -119,16 +119,7 @@ describe Alki::ClassBuilder do
       if defined?(AlkiTest::TestClass)
         Object.send :remove_const, :AlkiTest
       end
-      build(prefix: '', name: "alki_test/test_class")
-      assert(defined?(AlkiTest::TestClass),'Expected AlkiTest::TestClass to be defined')
-      Object.send :remove_const, :AlkiTest
-    end
-
-    it 'should use prefix and name to create class name' do
-      if defined?(AlkiTest::TestClass)
-        Object.send :remove_const, :AlkiTest
-      end
-      build(prefix: 'alki_test', name: "test_class")
+      build(name: "alki_test/test_class")
       assert(defined?(AlkiTest::TestClass),'Expected AlkiTest::TestClass to be defined')
       Object.send :remove_const, :AlkiTest
     end
@@ -137,11 +128,24 @@ describe Alki::ClassBuilder do
       build(
         secondary_classes: [
           {
-            class_name: 'AlkiTestClass'
+            constant_name: 'AlkiTestClass'
           }
         ]
       )
       assert(defined?(AlkiTestClass),'Expected AlkiTestClass to be defined')
+      Object.send :remove_const, :AlkiTestClass
+    end
+
+    it 'should allow creating subclasses' do
+      build(
+        constant_name: 'AlkiTestClass',
+        secondary_classes: [
+          {
+            subclass: 'Subclass'
+          }
+        ]
+      )
+      assert(defined?(AlkiTestClass::Subclass),'Expected AlkiTestClass::Subclass to be defined')
       Object.send :remove_const, :AlkiTestClass
     end
   end

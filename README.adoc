@@ -1,0 +1,277 @@
+# Alki::Dsl
+
+Alki::Dsl is a library for building DSLs. The resulting DSL buliders can be used standalone or as builders for
+https://github.com/alki-project/alki-loader[Alki::Loader].
+
+Alki::Dsl also allows composing and extending DSLs and comes with built in DSLs for building classes and
+new DSLs.
+
+## Synopsis
+
+```ruby
+require 'alki/dsl'
+
+strings_dsl = Alki::Dsl.build 'alki/dsls/dsl' do
+  init do
+    @strings = []
+  end
+
+  dsl_method :add do |val|
+    @strings << val
+  end
+
+  finish do
+    ctx[:result] = @strings.join("\n")
+  end
+end
+
+val = strings_dsl.build do
+  add "hello"
+  add "world"
+end
+
+puts val
+
+# output:
+# hello
+# world
+```
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'alki-dsl'
+```
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install alki-dsl
+
+## Usage
+
+All DSLs created with Alki::Dsl are Class objects with `::build` methods. These build methods take an optional
+hash of parameters, along with a ruby block to be evaluated. DSLs created with Alki::Dsl cannot directly
+strings.
+
+While DSLs can be created with Alki::Dsl manually, the easiest way is to use the provided "dsl" DSL. Each
+DSL defines any number of "dsl methods", which are methods that will be exposed to the user of the DSL.
+The DSL can also define "init" and "finish" blocks which will be run before and after the DSL is evaluated.
+
+DSLs can "require" other DSLs, causing both of their methods to be available to the user.
+
+DSLs are always evaluated within a new instance, so instance variables can be used to store state, however
+these will not be accessible to other DSLs being evaluated at the same time (via requires).
+
+Data is passed into and out of a DSL via the `ctx` hash. It is initially set using the hash provided to the
+DSLs build method, but can be updated by code in the DSL. Unlike instance variables, all DSLs being run share
+a single ctx hash, so it can be used to pass data between them.
+
+The result of the build method will either be the full ctx hash, or just the value of `ctx[:result]` if it
+exists (including if it's set to false or nil).
+
+```ruby
+require 'alki/dsl'
+
+strings_dsl = Alki::Dsl.build 'alki/dsls/dsl' do
+  init do # Init block, runs before any dsl methods are called
+    ctx[:strings] = [] # Store strings in ctx so other DSLs can access them
+  end
+
+  dsl_method :add do |val| # Simple dsl method called "add"
+    ctx[:strings] << val
+  end
+
+  finish do # Finish block, runs after any dsls methods are called
+    sep = ctx[:separator] || "\n" # Allow caller of dsl to set the separator
+    ctx[:result] = ctx[:strings].join(sep) # Set ctx[:result] so we only return this value
+  end
+end
+
+my_dsl = Alki::Dsl.build 'alki/dsls/dsl' do
+  require_dsl strings_dsl # Require other DSL. Value can also be a "load" string (see Alki::Loader section)
+
+  init do # This init block will be run *after* the strings_dsl one
+    @transform = nil
+  end
+
+  dsl_method :transform do |&blk|
+    @transform = blk # Don't need to share this, so just use instance variable
+  end
+
+  finish do # This finish block will be run *before* the strings_dsl one.
+    if @transform
+      ctx[:strings].map! &@transform
+    end
+  end
+end
+
+result = my_dsl.build(separator: ', ') do # Pass in a separator via data hash
+  transform(&:capitalize)
+
+  add "hello"
+  add "world"
+end
+
+puts result
+
+# output: Hello, World
+
+```
+
+### Using with Alki::Loader
+
+https://github.com/alki-project/alki-loader[Alki::Loader] is library that provides extra functionality
+over base Ruby around loading source files. One of its features is to associate "builder" objects with files
+or directories so that the code within them is processed by the builder object when they are loaded. More
+documentation can be found at the Alki::Loader https://github.com/alki-project/alki-loader[github page].
+
+The DSLs created by Alki::Dsl can be used as Alki::Loader builder objects, allowing DSLs to be used to define
+classes and modules. In addition, because the provided "dsl" DSL creates classes, it can also be used with
+Alki::Loader to allow defining your DSLs in standalone source files.
+
+To get started, in your project create a dsls directory at something like `lib/my_project/dsls`. This will
+be where we put our DSL source files.
+
+To register it create a `lib/alki_loader.rb` file:
+
+.lib/alki_loader.rb
+```ruby
+Alki::Loader.register 'my_project/dsls', builder: 'alki/dsls/dsl'
+```
+
+****
+*Note*: This registers the builder using a string. This is a "load" string and is used frequently in Alki
+projects. When used, the string will be `require`-d and then transformed into a constant name
+(so "alki/dsls/dsl" becomes Alki::Dsls::Dsl) and the resulting class will be used. In addition to less
+typing, this also allows lazy loading behavior, where the file and class are only loaded if needed.
+
+The DSL class can be passed directly instead of the load string.
+****
+
+Now a DSL definition file can be created in `lib/my_project/dsls`. Revisiting the previous example, a "strings"
+can be created.
+
+.lib/my_project/dsls/strings.rb
+```ruby
+Alki do
+  init do
+    ctx[:strings] = []
+  end
+
+  dsl_method :add do |val|
+    ctx[:strings] << val
+  end
+
+  finish do
+    sep = ctx[:separator] || "\n"
+    ctx[:result] = ctx[:strings].join(sep)
+  end
+end
+```
+
+The `Alki do ... end` block is part of Alki::Loader and is required. The rest of the DSL is the same
+as before. When this file is loaded by Ruby, it will create a DSL class called MyProject::Dsls::Strings.
+
+To use we can require the file normally (making sure to add `lib` to the load path and requiring 'alki/dsl'
+first).
+
+```
+$ irb -Ilib
+> require 'alki/dsl'
+> require 'my_project/dsls/strings'
+> MyProject::Dsls::Strings.build do
+>   add "hello"
+>   add "world"
+> end
+ => "hello\nworld"
+>
+```
+
+The second DSL can now be setup the same way. Note that the `require_dsl` value has been replaced with a load
+string.
+
+.lib/my_project/dsls/transformable_strings.rb
+```ruby
+Alki do
+  require_dsl 'my_project/dsls/strings'
+
+  init do
+    @transform = nil
+  end
+
+  dsl_method :transform do |&blk|
+    @transform = blk
+  end
+
+  finish do
+    if @transform
+      ctx[:strings].map! &@transform
+    end
+  end
+end
+```
+
+So what if we want to use our DSL with Alki::Loader as well? First, Alki::Loader requires builders to
+define a constant with the correct name, so we need code to do that. Alki::Dsl comes with a "class" DSL
+that makes this easy. First lets create a new DSL that adapts our transformable_strings DSL into a module
+builder.
+
+.lib/my_project/dsls/strings_class.rb
+```ruby
+Alki do
+  require_dsl 'alki/dsls/class'
+  require_dsl 'my_project/dsls/transformable_strings', :after # This makes it's finish runs before ours
+
+  finish do
+    # Helpers provided by alki/dsls/class
+    create_as_module # Don't need a class, just a module
+    value = ctx[:result]
+    add_class_method(:value) { value }
+  end
+end
+```
+
+Now we can create a new directory, register it with Alki::Loader, and add a file that uses the DSL. Note
+that we can set separator in the Alki::Loader register call. Any data values set here are passed in
+as `ctx` in the DSL.
+
+.lib/alki_loader.rb
+```ruby
+Alki::Loader.register 'my_project/dsls', builder: 'alki/dsls/dsl'
+Alki::Loader.register 'my_project/strings', builder: 'my_project/dsls/strings_class', separator: ', '
+```
+
+.lib/my_project/strings/hello_world.rb
+```ruby
+Alki do
+  transform &:capitalize
+
+  add "hello"
+  add "world"
+end
+```
+
+```
+$ irb -Ilib
+> require 'alki/dsl'
+> require 'my_project/strings/hello_world'
+> MyProject::Strings::HelloWorld.value
+ => "Hello, World"
+>
+```
+
+## Contributing
+
+Bug reports and pull requests are welcome on GitHub at https://github.com/alki-project/alki-dsl. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the http://contributor-covenant.org[Contributor Covenant] code of conduct.
+
+
+## License
+
+The gem is available as open source under the terms of the http://opensource.org/licenses/MIT[MIT License].
+

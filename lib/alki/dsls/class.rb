@@ -24,7 +24,7 @@ module Alki
       end
 
       def finish
-        ctx[:class] = Alki::ClassBuilder.build class_builder
+        ctx[:result] = Alki::ClassBuilder.build class_builder
         ctx.delete :class_builder
       end
     end

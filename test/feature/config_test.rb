@@ -13,7 +13,7 @@ describe 'dsl configuration' do
   end
 
   it 'should allow using dsls specified in same dsl config' do
-    Kernel.load(fixture_path('example','numbers','three.rb'))
+    require 'alki_test/numbers/three'
     AlkiTest::Numbers::Three.new.must_equal 3
   end
 end

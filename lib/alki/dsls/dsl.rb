@@ -10,7 +10,7 @@ module Alki
 
       def self.dsl_info
         {
-          requires: ['alki/dsls/class'],
+          requires: [['alki/dsls/class',:before]],
           methods: [
             :dsl_method,
             [:init,:dsl_init],
@@ -49,9 +49,9 @@ module Alki
         @info[:finish] = :_dsl_finish
       end
 
-      def require_dsl(dsl)
-        dsl_class = Alki::Support.load_class(dsl)
-        @info[:requires] << dsl_class
+      def require_dsl(dsl, order=:before)
+        dsl_class = Alki.load(dsl)
+        @info[:requires] << [dsl_class,order]
         if defined? dsl_class::Helpers
           add_module dsl_class::Helpers
           add_helper_module dsl_class::Helpers

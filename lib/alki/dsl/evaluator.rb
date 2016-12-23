@@ -20,28 +20,36 @@ module Alki
         @finishers.reverse_each(&:call)
         clear_dsl_methods mod
 
-        @processors.each do |processor|
-          processor.build data
+        if data.key? :result
+          data[:result]
+        else
+          data
         end
-
-        data
       end
 
       def process_dsl(dsl,data)
         return unless @dsls_seen.add? dsl
         cbs = dsl.generate(data)
+        after_requires = []
         if cbs[:requires]
-          cbs[:requires].each do |required_dsl|
-            process_dsl Alki::Support.load_class(required_dsl), data
+          cbs[:requires].each do |(required_dsl,order)|
+            case order
+              when :before
+                process_dsl Alki.load(required_dsl), data
+              when :after
+                after_requires << [Alki.load(required_dsl), data]
+            end
           end
         end
         @inits << cbs[:init] if cbs[:init]
         @finishers << cbs[:finish] if cbs[:finish]
-        @processors << cbs[:processors] if cbs[:processors]
         if cbs[:methods]
           cbs[:methods].each do |name, proc|
             define_dsl_method data[:module], name, &proc
           end
+        end
+        after_requires.each do |process_args|
+          process_dsl *process_args
         end
       end
 
