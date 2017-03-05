@@ -16,4 +16,9 @@ describe 'dsl configuration' do
     require 'alki_test/numbers/three'
     AlkiTest::Numbers::Three.new.must_equal 3
   end
+
+  it 'should allow using Alki::Dsl.merge to merge dsls together' do
+    require 'alki_test/numbers/three'
+    AlkiTest::Numbers::Three.simple.must_equal true
+  end
 end

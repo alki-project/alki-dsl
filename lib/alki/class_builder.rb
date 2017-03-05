@@ -85,12 +85,12 @@ module Alki
 
       if data[:modules]
         data[:modules].each do |mod|
-          klass.include mod
+          klass.include Alki.load mod
         end
       end
       if data[:class_modules]
         data[:class_modules].each do |mod|
-          klass.extend mod
+          klass.extend Alki.load mod
         end
       end
 

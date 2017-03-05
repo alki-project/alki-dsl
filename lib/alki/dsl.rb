@@ -1,14 +1,10 @@
 require 'alki/loader'
-require 'alki/dsls/dsl'
+require 'alki/dsl/merge'
 
 module Alki
   module Dsl
     def self.merge(*dsls)
-      Alki::Dsls::Dsl.build do
-        dsls.each do |dsl|
-          require_dsl dsl
-        end
-      end
+      Alki::Dsl::Merge.new *dsls
     end
 
     def self.build(name,data={},&blk)

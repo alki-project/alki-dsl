@@ -50,11 +50,11 @@ module Alki
       end
 
       def require_dsl(dsl, order=:before)
-        dsl_class = Alki.load(dsl)
-        @info[:requires] << [dsl_class,order]
-        if defined? dsl_class::Helpers
-          add_module dsl_class::Helpers
-          add_helper_module dsl_class::Helpers
+        dsl_class = Alki.load dsl
+        @info[:requires] << [dsl,order]
+        dsl_class.helpers.each do |helper|
+          add_module helper
+          add_helper_module helper
         end
       end
 
@@ -68,6 +68,10 @@ module Alki
 
       def finish
         set_super_class 'alki/dsl/base'
+        class_builder('Helpers')[:type] = :module
+        add_class_method :helpers do
+          [self::Helpers]
+        end
         info = @info.freeze
         add_class_method :dsl_info do
           info

@@ -48,13 +48,11 @@ module Alki
       end
 
       def add_helper(name,&blk)
-        class_builder('Helpers')[:type] = :module
         add_method name, &blk
         add_method name, subclass: 'Helpers', &blk
       end
 
       def add_helper_module(mod)
-        class_builder('Helpers')[:type] = :module
         add_module mod
         add_module mod, subclass: 'Helpers'
       end

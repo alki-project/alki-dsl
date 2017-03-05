@@ -60,7 +60,9 @@ describe Alki::ClassBuilder do
 
     it 'should allow setting super class by name' do
       class AlkiTestClass; end
-      build(super_class: 'alki_test_class').superclass.must_equal AlkiTestClass
+      Alki.stub(:load,AlkiTestClass) do
+        build(super_class: 'alki_test_class').superclass.must_equal AlkiTestClass
+      end
       Object.send :remove_const, :AlkiTestClass
     end
 

@@ -16,6 +16,9 @@ module Alki
         process_dsl dsl, data
 
         @inits.each(&:call)
+        define_dsl_method mod, :method_missing do |meth,*args,&b|
+          blk.binding.receiver.send meth, *args, &b
+        end
         dsl_exec mod, &blk
         @finishers.reverse_each(&:call)
         clear_dsl_methods mod
