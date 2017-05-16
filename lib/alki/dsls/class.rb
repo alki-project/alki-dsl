@@ -7,7 +7,9 @@ module Alki
     class Class < Alki::Dsl::Base
       include Alki::Dsl::ClassHelpers
 
-      self::Helpers = Alki::Dsl::ClassHelpers
+      def self.helpers
+        [Alki::Dsl::ClassHelpers]
+      end
 
       def self.dsl_info
         {

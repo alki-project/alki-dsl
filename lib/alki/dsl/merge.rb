@@ -10,10 +10,8 @@ module Alki
         @requires = dsls.map{|dsl| [dsl,:before]}.freeze
       end
 
-      def generate(_ctx)
-        {
-          requires: @requires
-        }
+      def generate(evaluator,_ctx)
+        evaluator.update requires: @requires
       end
 
       def helpers

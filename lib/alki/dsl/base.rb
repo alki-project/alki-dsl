@@ -6,8 +6,8 @@ module Alki
     class Base
       extend Alki::Dsl::Builder
 
-      def self.generate(ctx)
-        obj = new(ctx)
+      def self.generate(evaluator,ctx)
+        obj = new(ctx,evaluator)
         result = {methods: {}}
         info = self.dsl_info
 
@@ -25,7 +25,18 @@ module Alki
             result[:methods][name] = obj.method method
           end
         end
-        result
+
+        if info[:helpers]
+          info[:helpers].each do |method|
+            if method.is_a?(Array)
+              name, method = method
+            else
+              name = method
+            end
+            result[:helpers][name] = obj.method method
+          end
+        end
+        evaluator.update result
       end
 
       def self.dsl_info
@@ -33,15 +44,12 @@ module Alki
       end
 
       def self.helpers
-        if defined? self::Helpers
-          [self::Helpers]
-        else
-          []
-        end
+        []
       end
 
-      def initialize(ctx)
+      def initialize(ctx,evaluator)
         @ctx = ctx
+        @evaluator = evaluator
       end
 
       attr_reader :ctx

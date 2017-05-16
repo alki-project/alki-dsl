@@ -47,16 +47,6 @@ module Alki
         }
       end
 
-      def add_helper(name,&blk)
-        add_method name, &blk
-        add_method name, subclass: 'Helpers', &blk
-      end
-
-      def add_helper_module(mod)
-        add_module mod
-        add_module mod, subclass: 'Helpers'
-      end
-
       def add_initialize_param(name,opts={},&default)
         name = name.to_sym
         param = default ? [name,default] : name

@@ -5,8 +5,25 @@ require 'alki/dsl/class_helpers'
 module Alki
   module Dsls
     class Dsl < Alki::Dsl::Base
-      include Alki::Dsl::ClassHelpers
-      Helpers = Alki::Dsl::ClassHelpers
+      module Helpers
+        include Alki::Dsl::ClassHelpers
+
+        def add_helper(name,&blk)
+          add_method name, &blk
+          add_method name, subclass: 'Helpers', &blk
+        end
+
+        def add_helper_module(mod)
+          add_module mod
+          add_module mod, subclass: 'Helpers'
+        end
+      end
+
+      include Helpers
+
+      def self.helpers
+        [Helpers]
+      end
 
       def self.dsl_info
         {
@@ -68,13 +85,22 @@ module Alki
 
       def finish
         set_super_class 'alki/dsl/base'
-        class_builder('Helpers')[:type] = :module
+        create_as_module(subclass: 'Helpers')
+
         add_class_method :helpers do
           [self::Helpers]
         end
         info = @info.freeze
         add_class_method :dsl_info do
           info
+        end
+
+        add_method(:require_dsl,private: true) do |dsl,order=:before|
+          dsl_class = Alki.load dsl
+          dsl_class.helpers.each do |helper|
+            self.singleton_class.send :include, helper
+          end
+          @evaluator.update requires: [[dsl,order]]
         end
       end
     end

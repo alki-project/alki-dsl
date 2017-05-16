@@ -1,4 +1,4 @@
-require_relative '../test_helper'
+require 'alki/test'
 require 'alki/dsl/evaluator'
 
 describe Alki::Dsl::Evaluator do

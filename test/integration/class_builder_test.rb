@@ -1,4 +1,4 @@
-require_relative '../test_helper'
+require 'alki/test'
 require 'alki/class_builder'
 
 describe Alki::ClassBuilder do
