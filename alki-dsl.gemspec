@@ -18,6 +18,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency 'alki-support', '~> 0.7'
-  spec.add_dependency 'alki-loader', '~> 0.2'
-  spec.add_development_dependency 'alki-testing', '~> 0.1'
+  spec.add_dependency 'alki-loader', '~> 0.2', '>= 0.2.2'
 end
