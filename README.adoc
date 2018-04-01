@@ -1,5 +1,7 @@
 # Alki::Dsl
 
+image:https://travis-ci.org/alki-project/alki-dsl.svg?branch=master["Build Status", link="https://travis-ci.org/alki-project/alki-dsl"]
+
 Alki::Dsl is a library for building DSLs. The resulting DSL buliders can be used standalone or as builders for
 https://github.com/alki-project/alki-loader[Alki::Loader].
 

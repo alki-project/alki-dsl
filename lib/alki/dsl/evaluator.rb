@@ -36,11 +36,11 @@ module Alki
       end
 
       def context
-        Thread.current[:__alki_dsl_context]
+        @context
       end
 
       def evaluate(&blk)
-        Thread.current[:__alki_dsl_context] = @data[:context] || blk.binding.receiver
+        @context = @data[:context] || block_context(blk)
         @mod.class_exec &blk
       end
 
@@ -93,6 +93,15 @@ module Alki
       def clear_dsl_methods
         @mod.singleton_methods do |m|
           @mod.singleton_class.send :remove_method, m
+        end
+      end
+
+      def block_context(blk)
+        b = blk.binding
+        if b.respond_to? :receiver
+          b.receiver
+        else
+          b.eval('self')
         end
       end
     end
